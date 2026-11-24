@@ -2,6 +2,7 @@ package com.openpos.app.data.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -27,7 +28,8 @@ data class Category(
             childColumns = ["categoryId"],
             onDelete = ForeignKey.SET_NULL
         )
-    ]
+    ],
+    indices = [Index(value = ["categoryId"])]
 )
 data class Product(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -70,7 +72,8 @@ data class Sale(
             childColumns = ["saleId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["saleId"]), Index(value = ["productId"])]
 )
 data class SaleItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -108,14 +111,15 @@ data class Expense(
             childColumns = ["productId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["productId"])]
 )
 data class StockMovement(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val productId: Long,
     val productName: String,
-    val changeQty: Double, // positive = restock/adjustment-in, negative = sale/adjustment-out
-    val reason: String, // "Sale", "Restock", "Adjustment"
+    val changeQty: Double,
+    val reason: String,
     val note: String? = null,
     val createdAt: Long
 )
