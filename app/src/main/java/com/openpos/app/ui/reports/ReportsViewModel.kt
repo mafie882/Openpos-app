@@ -31,6 +31,8 @@ data class ReportSummary(
 
 class ReportsViewModel(private val repository: PosRepository) : ViewModel() {
     var range by mutableStateOf(ReportRange.WEEK)
+        private set
+
     var summary by mutableStateOf(ReportSummary())
         private set
 
