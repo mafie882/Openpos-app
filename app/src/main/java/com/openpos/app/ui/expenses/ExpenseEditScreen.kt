@@ -1,11 +1,14 @@
 package com.openpos.app.ui.expenses
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -44,8 +47,8 @@ fun ExpenseEditScreen(expenseId: Long, onDone: () -> Unit) {
         Column(Modifier.padding(padding).padding(16.dp)) {
             Text("Category", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(6.dp))
-            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.foundation.lazy.items(categories) { cat ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(categories) { cat ->
                     FilterChip(
                         selected = categoryName == cat.name,
                         onClick = { categoryName = cat.name },
@@ -54,7 +57,7 @@ fun ExpenseEditScreen(expenseId: Long, onDone: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = newCategoryText,
                     onValueChange = { newCategoryText = it },
@@ -70,7 +73,6 @@ fun ExpenseEditScreen(expenseId: Long, onDone: () -> Unit) {
                     }
                 }) { Text("Add") }
             }
-
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = amountText,
@@ -86,7 +88,6 @@ fun ExpenseEditScreen(expenseId: Long, onDone: () -> Unit) {
                 label = { Text("Note") },
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = {
