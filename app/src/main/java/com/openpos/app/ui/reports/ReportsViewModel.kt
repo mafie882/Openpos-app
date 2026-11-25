@@ -40,7 +40,7 @@ class ReportsViewModel(private val repository: PosRepository) : ViewModel() {
         load()
     }
 
-    fun setRange(newRange: ReportRange) {
+    fun selectRange(newRange: ReportRange) {
         range = newRange
         load()
     }

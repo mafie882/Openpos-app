@@ -34,7 +34,7 @@ fun ReportsScreen() {
                 ReportRange.entries.forEach { range ->
                     FilterChip(
                         selected = vm.range == range,
-                        onClick = { vm.setRange(range) },
+                        onClick = { vm.selectRange(range) },
                         label = { Text(range.label) }
                     )
                 }
