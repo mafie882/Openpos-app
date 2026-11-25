@@ -51,6 +51,6 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk dist/OpenPOS-debug.apk
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dist/OpenPOS-debug.apk
+          git add -f dist/OpenPOS-debug.apk
           git commit -m "Add built debug APK to dist/ [skip ci]" || echo "Nothing to commit"
           git push
