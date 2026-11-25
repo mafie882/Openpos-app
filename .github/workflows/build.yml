@@ -4,8 +4,14 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
+    # Skip the run this workflow's own commit (committing the built APK
+    # back into the repo) would otherwise trigger, to avoid an infinite loop.
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +35,22 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: openpos-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Commit APK back into the repo
+        # Artifact downloads redirect to Azure blob storage which isn't
+        # reachable from the environment building this, so the APK is
+        # also committed directly into the repo under dist/ where a
+        # plain `git pull` can retrieve it.
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/OpenPOS-debug.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/OpenPOS-debug.apk
+          git commit -m "Add built debug APK to dist/ [skip ci]" || echo "Nothing to commit"
+          git push
