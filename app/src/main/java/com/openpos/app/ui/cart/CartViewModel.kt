@@ -36,6 +36,7 @@ class CartViewModel(private val repository: PosRepository) : ViewModel() {
 
     var orderDiscount by mutableStateOf(0.0)
     var customerName by mutableStateOf("")
+    var customerId by mutableStateOf<Long?>(null)
     var note by mutableStateOf("")
     var lastCompletedSaleId by mutableStateOf<Long?>(null)
     var errorMessage by mutableStateOf<String?>(null)
@@ -90,6 +91,7 @@ class CartViewModel(private val repository: PosRepository) : ViewModel() {
         lines.value = emptyList()
         orderDiscount = 0.0
         customerName = ""
+        customerId = null
         note = ""
     }
 
@@ -178,7 +180,8 @@ class CartViewModel(private val repository: PosRepository) : ViewModel() {
                 amountPaid = amountPaid,
                 paymentMethod = paymentMethod,
                 customerName = customerName.ifBlank { null },
-                note = note.ifBlank { null }
+                note = note.ifBlank { null },
+                customerId = customerId
             )
             lastCompletedSaleId = saleId
             clearCart()

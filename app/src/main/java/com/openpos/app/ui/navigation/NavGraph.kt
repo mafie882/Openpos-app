@@ -23,6 +23,8 @@ import com.openpos.app.ui.cart.CheckoutScreen
 import com.openpos.app.ui.cart.HeldOrdersScreen
 import com.openpos.app.ui.categories.CategoryScreen
 import com.openpos.app.ui.common.openPosApp
+import com.openpos.app.ui.customers.CustomerDetailScreen
+import com.openpos.app.ui.customers.CustomerListScreen
 import com.openpos.app.ui.expenses.ExpenseEditScreen
 import com.openpos.app.ui.expenses.ExpenseListScreen
 import com.openpos.app.ui.inventory.InventoryScreen
@@ -151,7 +153,21 @@ fun OpenPosNavGraph() {
                 ReportsScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(onOpenCustomers = { navController.navigate(Screen.Customers.route) })
+            }
+            composable(Screen.Customers.route) {
+                CustomerListScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenCustomer = { id -> navController.navigate(Screen.CustomerDetail.create(id)) }
+                )
+            }
+            composable(Screen.CustomerDetail.route) { backStackEntry ->
+                val customerId = backStackEntry.arguments?.getString("customerId")?.toLongOrNull() ?: 0L
+                CustomerDetailScreen(
+                    customerId = customerId,
+                    onBack = { navController.popBackStack() },
+                    onOpenReceipt = { id -> navController.navigate(Screen.Receipt.create(id)) }
+                )
             }
         }
     }

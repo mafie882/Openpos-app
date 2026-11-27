@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onOpenCustomers: () -> Unit = {}) {
     val app = openPosApp()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -52,6 +52,16 @@ fun SettingsScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(0.4f)
             )
+
+            Spacer(Modifier.height(32.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(16.dp))
+
+            Text("Customers", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onOpenCustomers, modifier = Modifier.fillMaxWidth()) {
+                Text("Manage customers")
+            }
 
             Spacer(Modifier.height(32.dp))
             HorizontalDivider()

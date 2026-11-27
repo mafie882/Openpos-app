@@ -1,13 +1,17 @@
 package com.openpos.app.ui.cart
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.openpos.app.ui.common.appViewModel
+import com.openpos.app.ui.customers.CustomerViewModel
 import com.openpos.app.util.Money
 
 private val paymentMethods = listOf("Cash", "Card", "Mobile payment", "Other")
@@ -19,10 +23,43 @@ fun CheckoutScreen(
     onBack: () -> Unit,
     onComplete: (Long) -> Unit
 ) {
+    val customerVm = appViewModel { app -> CustomerViewModel(app.repository) }
+    val savedCustomers by customerVm.customers.collectAsState()
     var discountText by remember { mutableStateOf(if (cartViewModel.orderDiscount == 0.0) "" else cartViewModel.orderDiscount.toString()) }
     var amountPaidText by remember { mutableStateOf("") }
     var selectedMethod by remember { mutableStateOf(paymentMethods.first()) }
     var customerName by remember { mutableStateOf(cartViewModel.customerName) }
+    var showCustomerPicker by remember { mutableStateOf(false) }
+
+    if (showCustomerPicker) {
+        AlertDialog(
+            onDismissRequest = { showCustomerPicker = false },
+            title = { Text("Pick a customer") },
+            text = {
+                if (savedCustomers.isEmpty()) {
+                    Text("No saved customers yet. Add one from the Customers screen, or just type a name below.")
+                } else {
+                    Column {
+                        savedCustomers.forEach { c ->
+                            androidx.compose.material3.ListItem(
+                                headlineContent = { Text(c.name) },
+                                modifier = Modifier.clickable {
+                                    customerName = c.name
+                                    cartViewModel.customerName = c.name
+                                    cartViewModel.customerId = c.id
+                                    showCustomerPicker = false
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showCustomerPicker = false }) { Text("Close") }
+            }
+        )
+    }
 
     val discount = discountText.toDoubleOrNull() ?: 0.0
     LaunchedEffect(discount) { cartViewModel.orderDiscount = discount }
@@ -63,8 +100,17 @@ fun CheckoutScreen(
 
             OutlinedTextField(
                 value = customerName,
-                onValueChange = { customerName = it; cartViewModel.customerName = it },
+                onValueChange = {
+                    customerName = it
+                    cartViewModel.customerName = it
+                    cartViewModel.customerId = null // free-typed name no longer matches a saved customer
+                },
                 label = { Text("Customer name (optional)") },
+                trailingIcon = {
+                    IconButton(onClick = { showCustomerPicker = true }) {
+                        Icon(Icons.Default.Person, contentDescription = "Pick saved customer")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(16.dp))
