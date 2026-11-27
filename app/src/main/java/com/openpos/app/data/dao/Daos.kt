@@ -39,7 +39,7 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE id = :id")
     suspend fun getById(id: Long): Product?
 
-    @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
+    @Query("SELECT * FROM products WHERE barcode = :barcode AND isActive = 1 LIMIT 1")
     suspend fun getByBarcode(barcode: String): Product?
 
     @Query("SELECT * FROM products WHERE isActive = 1 AND trackStock = 1 AND stockQty <= lowStockThreshold ORDER BY stockQty")
@@ -162,4 +162,103 @@ interface StockMovementDao {
 
     @Insert
     suspend fun insertAll(movements: List<StockMovement>)
+}
+
+@Dao
+interface CustomerDao {
+    @Query("SELECT * FROM customers ORDER BY name")
+    fun observeAll(): Flow<List<Customer>>
+
+    @Query("SELECT * FROM customers ORDER BY name")
+    suspend fun getAll(): List<Customer>
+
+    @Query("SELECT * FROM customers WHERE id = :id")
+    suspend fun getById(id: Long): Customer?
+
+    @Insert
+    suspend fun insert(customer: Customer): Long
+
+    @Insert
+    suspend fun insertAll(customers: List<Customer>)
+
+    @Update
+    suspend fun update(customer: Customer)
+
+    @Delete
+    suspend fun delete(customer: Customer)
+}
+
+@Dao
+interface HeldOrderDao {
+    @Query("SELECT * FROM held_orders ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<HeldOrder>>
+
+    @Query("SELECT * FROM held_orders")
+    suspend fun getAll(): List<HeldOrder>
+
+    @Insert
+    suspend fun insert(order: HeldOrder): Long
+
+    @Insert
+    suspend fun insertAll(orders: List<HeldOrder>)
+
+    @Delete
+    suspend fun delete(order: HeldOrder)
+}
+
+@Dao
+interface RefundDao {
+    @Query("SELECT * FROM refunds WHERE saleId = :saleId ORDER BY createdAt DESC")
+    suspend fun getForSale(saleId: Long): List<Refund>
+
+    @Query("SELECT * FROM refunds")
+    suspend fun getAll(): List<Refund>
+
+    @Insert
+    suspend fun insert(refund: Refund): Long
+
+    @Insert
+    suspend fun insertAll(refunds: List<Refund>)
+}
+
+@Dao
+interface RefundItemDao {
+    @Query("SELECT * FROM refund_items WHERE refundId = :refundId")
+    suspend fun getForRefund(refundId: Long): List<RefundItem>
+
+    @Query("SELECT * FROM refund_items WHERE saleItemId = :saleItemId")
+    suspend fun getForSaleItem(saleItemId: Long): List<RefundItem>
+
+    @Query("SELECT * FROM refund_items")
+    suspend fun getAll(): List<RefundItem>
+
+    @Insert
+    suspend fun insert(item: RefundItem): Long
+
+    @Insert
+    suspend fun insertAll(items: List<RefundItem>)
+}
+
+@Dao
+interface StaffUserDao {
+    @Query("SELECT * FROM staff_users ORDER BY name")
+    fun observeAll(): Flow<List<StaffUser>>
+
+    @Query("SELECT * FROM staff_users ORDER BY name")
+    suspend fun getAll(): List<StaffUser>
+
+    @Query("SELECT * FROM staff_users WHERE pin = :pin AND isActive = 1 LIMIT 1")
+    suspend fun getByPin(pin: String): StaffUser?
+
+    @Insert
+    suspend fun insert(staff: StaffUser): Long
+
+    @Insert
+    suspend fun insertAll(staff: List<StaffUser>)
+
+    @Update
+    suspend fun update(staff: StaffUser)
+
+    @Delete
+    suspend fun delete(staff: StaffUser)
 }

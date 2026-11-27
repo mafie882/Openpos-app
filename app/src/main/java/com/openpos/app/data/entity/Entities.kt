@@ -43,10 +43,15 @@ data class Product(
     val stockQty: Double = 0.0,
     val trackStock: Boolean = true,
     val lowStockThreshold: Double = 5.0,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    /** Path to a copy of the photo in this app's own internal storage — never a remote URL. */
+    val imageUri: String? = null
 )
 
-@Entity(tableName = "sales")
+@Entity(
+    tableName = "sales",
+    indices = [Index(value = ["customerId"]), Index(value = ["staffId"])]
+)
 data class Sale(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val invoiceNo: String,
@@ -60,7 +65,11 @@ data class Sale(
     val paymentMethod: String = "Cash",
     val customerName: String? = null,
     val note: String? = null,
-    val isVoided: Boolean = false
+    val isVoided: Boolean = false,
+    val customerId: Long? = null,
+    val staffId: Long? = null,
+    val staffName: String? = null,
+    val refundedAmount: Double = 0.0
 )
 
 @Entity(
@@ -122,4 +131,90 @@ data class StockMovement(
     val reason: String,
     val note: String? = null,
     val createdAt: Long
+)
+
+@Entity(tableName = "customers")
+data class Customer(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val phone: String? = null,
+    val email: String? = null,
+    val note: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * A cart snapshot parked mid-sale (e.g. to serve another customer while
+ * this one decides). [linesJson] is a small JSON blob of line items —
+ * see HeldOrderCodec — rather than its own line-item table, since a held
+ * order is a short-lived draft, not data anything else needs to query.
+ */
+@Entity(tableName = "held_orders")
+data class HeldOrder(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val label: String,
+    val linesJson: String,
+    val orderDiscount: Double = 0.0,
+    val customerName: String? = null,
+    val note: String? = null,
+    val createdAt: Long
+)
+
+@Entity(
+    tableName = "refunds",
+    foreignKeys = [
+        ForeignKey(
+            entity = Sale::class,
+            parentColumns = ["id"],
+            childColumns = ["saleId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["saleId"])]
+)
+data class Refund(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val saleId: Long,
+    val amount: Double,
+    val note: String? = null,
+    val createdAt: Long
+)
+
+@Entity(
+    tableName = "refund_items",
+    foreignKeys = [
+        ForeignKey(
+            entity = Refund::class,
+            parentColumns = ["id"],
+            childColumns = ["refundId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = SaleItem::class,
+            parentColumns = ["id"],
+            childColumns = ["saleItemId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["refundId"]), Index(value = ["saleItemId"])]
+)
+data class RefundItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val refundId: Long,
+    val saleItemId: Long,
+    val productId: Long?,
+    val productName: String,
+    val quantity: Double,
+    val amount: Double
+)
+
+/** A local, on-device staff login — a 4-digit PIN, never an internet account. */
+@Entity(tableName = "staff_users")
+data class StaffUser(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val pin: String,
+    val role: String = "CASHIER", // "ADMIN" or "CASHIER"
+    val isActive: Boolean = true,
+    val createdAt: Long = System.currentTimeMillis()
 )
