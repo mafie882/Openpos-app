@@ -41,6 +41,24 @@ class CartViewModel(private val repository: PosRepository) : ViewModel() {
     var lastCompletedSaleId by mutableStateOf<Long?>(null)
     var errorMessage by mutableStateOf<String?>(null)
 
+    // Local, on-device staff session (optional, off by default — see
+    // SettingsPrefs.requireStaffPin). Never an internet account.
+    var loggedInStaffId by mutableStateOf<Long?>(null)
+    var loggedInStaffName by mutableStateOf<String?>(null)
+    var loggedInStaffRole by mutableStateOf<String?>(null)
+
+    fun logInStaff(id: Long, name: String, role: String) {
+        loggedInStaffId = id
+        loggedInStaffName = name
+        loggedInStaffRole = role
+    }
+
+    fun logOutStaff() {
+        loggedInStaffId = null
+        loggedInStaffName = null
+        loggedInStaffRole = null
+    }
+
     val subTotal get() = lines.value.sumOf { it.subtotal }
     val taxTotal get() = lines.value.sumOf { it.tax }
     val grandTotal get() = (subTotal - orderDiscount + taxTotal).coerceAtLeast(0.0)
@@ -181,7 +199,9 @@ class CartViewModel(private val repository: PosRepository) : ViewModel() {
                 paymentMethod = paymentMethod,
                 customerName = customerName.ifBlank { null },
                 note = note.ifBlank { null },
-                customerId = customerId
+                customerId = customerId,
+                staffId = loggedInStaffId,
+                staffName = loggedInStaffName
             )
             lastCompletedSaleId = saleId
             clearCart()

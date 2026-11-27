@@ -14,6 +14,7 @@ sealed class Screen(val route: String) {
     data object SalesHistory : Screen("sales_history")
     data object HeldOrders : Screen("held_orders")
     data object Customers : Screen("customers")
+    data object Staff : Screen("staff")
     data object CustomerDetail : Screen("customer_detail/{customerId}") {
         fun create(customerId: Long) = "customer_detail/$customerId"
     }

@@ -34,6 +34,10 @@ import com.openpos.app.ui.reports.ReportsScreen
 import com.openpos.app.ui.sales.ReceiptScreen
 import com.openpos.app.ui.sales.SalesHistoryScreen
 import com.openpos.app.ui.settings.SettingsScreen
+import com.openpos.app.ui.staff.PinLockScreen
+import com.openpos.app.ui.staff.StaffListScreen
+import com.openpos.app.data.SettingsPrefs
+import androidx.compose.ui.platform.LocalContext
 
 private val bottomDestinations = listOf(
     BottomDestination(Screen.Products, "Sell", Icons.Default.Storefront),
@@ -47,9 +51,16 @@ private val bottomDestinations = listOf(
 fun OpenPosNavGraph() {
     val navController = rememberNavController()
     val app = openPosApp()
+    val context = LocalContext.current
     val cartViewModel: CartViewModel = viewModel(factory = com.openpos.app.ui.common.SimpleViewModelFactory {
         CartViewModel(app.repository)
     })
+
+    val requirePin = remember { SettingsPrefs.requireStaffPin(context) }
+    if (requirePin && cartViewModel.loggedInStaffId == null) {
+        PinLockScreen(onUnlocked = { id, name, role -> cartViewModel.logInStaff(id, name, role) })
+        return
+    }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination
@@ -153,7 +164,17 @@ fun OpenPosNavGraph() {
                 ReportsScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(onOpenCustomers = { navController.navigate(Screen.Customers.route) })
+                SettingsScreen(
+                    onOpenCustomers = { navController.navigate(Screen.Customers.route) },
+                    onOpenStaff = { navController.navigate(Screen.Staff.route) },
+                    onLockNow = {
+                        cartViewModel.logOutStaff()
+                        navController.navigate(Screen.Products.route) { popUpTo(Screen.Products.route) }
+                    }
+                )
+            }
+            composable(Screen.Staff.route) {
+                StaffListScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.Customers.route) {
                 CustomerListScreen(
