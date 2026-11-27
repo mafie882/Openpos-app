@@ -40,6 +40,7 @@ class ProductViewModel(private val repository: PosRepository) : ViewModel() {
     }
 
     suspend fun getProduct(id: Long): Product? = repository.getProduct(id)
+    suspend fun getProductByBarcode(barcode: String): Product? = repository.getProductByBarcode(barcode)
 
     fun saveProduct(product: Product, onDone: (Long) -> Unit) {
         viewModelScope.launch {

@@ -7,12 +7,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.openpos.app.data.entity.Product
+import com.openpos.app.util.rememberBarcodeScanner
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,9 +97,20 @@ fun ProductEditScreen(
             OutlinedTextField(name, { name = it }, label = { Text("Product name*") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
 
+            val scanForBarcode = rememberBarcodeScanner { code ->
+                if (code != null) barcode = code
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(sku, { sku = it }, label = { Text("SKU") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(barcode, { barcode = it }, label = { Text("Barcode") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    barcode, { barcode = it }, label = { Text("Barcode") },
+                    trailingIcon = {
+                        IconButton(onClick = scanForBarcode) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode")
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
             }
             Spacer(Modifier.height(10.dp))
 

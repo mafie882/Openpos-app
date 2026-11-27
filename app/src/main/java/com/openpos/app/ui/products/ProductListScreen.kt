@@ -12,18 +12,23 @@ import androidx.compose.foundation.lazy.items as listItems
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openpos.app.data.entity.Product
 import com.openpos.app.ui.cart.CartViewModel
 import com.openpos.app.ui.common.appViewModel
 import com.openpos.app.util.Money
+import com.openpos.app.util.rememberBarcodeScanner
+import kotlinx.coroutines.launch
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,12 +44,32 @@ fun ProductListScreen(
     val allProducts by vm.products.collectAsState()
     val categories by vm.categories.collectAsState()
     val visible = vm.filtered(allProducts)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val scanToSell = rememberBarcodeScanner { code ->
+        if (code != null) {
+            scope.launch {
+                val product = vm.getProductByBarcode(code)
+                if (product != null) {
+                    cartViewModel.addProduct(product)
+                    Toast.makeText(context, "Added ${product.name}", Toast.LENGTH_SHORT).show()
+                } else {
+                    vm.searchQuery = code
+                    Toast.makeText(context, "No product found for that barcode", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("OpenPOS") },
                 actions = {
+                    IconButton(onClick = scanToSell) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode")
+                    }
                     IconButton(onClick = onOpenSalesHistory) {
                         Icon(Icons.Default.History, contentDescription = "Sales history")
                     }
