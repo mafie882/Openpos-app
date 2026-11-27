@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,9 +21,36 @@ import com.openpos.app.util.trimZeros
 fun CartScreen(
     cartViewModel: CartViewModel,
     onBack: () -> Unit,
-    onCheckout: () -> Unit
+    onCheckout: () -> Unit,
+    onOpenHeldOrders: () -> Unit = {}
 ) {
     val lines by cartViewModel.lines
+    var showHoldDialog by remember { mutableStateOf(false) }
+
+    if (showHoldDialog) {
+        var label by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showHoldDialog = false },
+            title = { Text("Hold this order") },
+            text = {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    label = { Text("Label (e.g. \"Table 4\")") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showHoldDialog = false
+                    cartViewModel.holdCurrentOrder(label, onDone = onBack)
+                }) { Text("Hold") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showHoldDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -32,7 +60,11 @@ fun CartScreen(
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
+                    IconButton(onClick = onOpenHeldOrders) {
+                        Icon(Icons.Default.PauseCircle, contentDescription = "Held orders")
+                    }
                     if (lines.isNotEmpty()) {
+                        TextButton(onClick = { showHoldDialog = true }) { Text("Hold") }
                         TextButton(onClick = { cartViewModel.clearCart() }) { Text("Clear") }
                     }
                 }

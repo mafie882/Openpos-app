@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import com.openpos.app.ui.cart.CartScreen
 import com.openpos.app.ui.cart.CartViewModel
 import com.openpos.app.ui.cart.CheckoutScreen
+import com.openpos.app.ui.cart.HeldOrdersScreen
 import com.openpos.app.ui.categories.CategoryScreen
 import com.openpos.app.ui.common.openPosApp
 import com.openpos.app.ui.expenses.ExpenseEditScreen
@@ -102,7 +103,15 @@ fun OpenPosNavGraph() {
                 CartScreen(
                     cartViewModel = cartViewModel,
                     onBack = { navController.popBackStack() },
-                    onCheckout = { navController.navigate(Screen.Checkout.route) }
+                    onCheckout = { navController.navigate(Screen.Checkout.route) },
+                    onOpenHeldOrders = { navController.navigate(Screen.HeldOrders.route) }
+                )
+            }
+            composable(Screen.HeldOrders.route) {
+                HeldOrdersScreen(
+                    cartViewModel = cartViewModel,
+                    onBack = { navController.popBackStack() },
+                    onResumed = { navController.popBackStack(Screen.Cart.route, inclusive = false) }
                 )
             }
             composable(Screen.Checkout.route) {
