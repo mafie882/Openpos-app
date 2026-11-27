@@ -18,7 +18,7 @@ import java.io.InputStreamReader
 class BackupManager(private val repository: PosRepository) {
 
     data class BackupFile(
-        val formatVersion: Int = 1,
+        val formatVersion: Int = 2,
         val exportedAt: Long = System.currentTimeMillis(),
         val categories: List<Category>,
         val products: List<Product>,
@@ -26,7 +26,12 @@ class BackupManager(private val repository: PosRepository) {
         val saleItems: List<SaleItem>,
         val expenses: List<Expense>,
         val expenseCategories: List<ExpenseCategory>,
-        val stockMovements: List<StockMovement>
+        val stockMovements: List<StockMovement>,
+        val customers: List<Customer> = emptyList(),
+        val heldOrders: List<HeldOrder> = emptyList(),
+        val refunds: List<Refund> = emptyList(),
+        val refundItems: List<RefundItem> = emptyList(),
+        val staff: List<StaffUser> = emptyList()
     )
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
@@ -39,7 +44,12 @@ class BackupManager(private val repository: PosRepository) {
             saleItems = repository.allSaleItems(),
             expenses = repository.allExpenses(),
             expenseCategories = repository.allExpenseCategories(),
-            stockMovements = repository.rawDb().stockMovementDao().getAll()
+            stockMovements = repository.rawDb().stockMovementDao().getAll(),
+            customers = repository.allCustomers(),
+            heldOrders = repository.rawDb().heldOrderDao().getAll(),
+            refunds = repository.rawDb().refundDao().getAll(),
+            refundItems = repository.rawDb().refundItemDao().getAll(),
+            staff = repository.allStaff()
         )
         withContext(Dispatchers.IO) {
             context.contentResolver.openOutputStream(uri)?.use { out ->
@@ -62,7 +72,12 @@ class BackupManager(private val repository: PosRepository) {
             saleItems = backup.saleItems,
             expenses = backup.expenses,
             expenseCategories = backup.expenseCategories,
-            stockMovements = backup.stockMovements
+            stockMovements = backup.stockMovements,
+            customers = backup.customers,
+            heldOrders = backup.heldOrders,
+            refunds = backup.refunds,
+            refundItems = backup.refundItems,
+            staff = backup.staff
         )
     }
 }

@@ -90,7 +90,10 @@ class PosRepository(private val db: AppDatabase) {
         amountPaid: Double,
         paymentMethod: String,
         customerName: String?,
-        note: String?
+        note: String?,
+        customerId: Long? = null,
+        staffId: Long? = null,
+        staffName: String? = null
     ): Long {
         val subTotal = lines.sumOf { it.lineSubtotal }
         val taxAmount = lines.sumOf { it.lineTax }
@@ -108,7 +111,10 @@ class PosRepository(private val db: AppDatabase) {
             changeDue = (amountPaid - total).coerceAtLeast(0.0),
             paymentMethod = paymentMethod,
             customerName = customerName,
-            note = note
+            note = note,
+            customerId = customerId,
+            staffId = staffId,
+            staffName = staffName
         )
         val saleId = db.saleDao().insert(sale)
 
@@ -171,6 +177,85 @@ class PosRepository(private val db: AppDatabase) {
     suspend fun addExpenseCategory(name: String) = db.expenseCategoryDao().insert(ExpenseCategory(name = name))
     suspend fun deleteExpenseCategory(category: ExpenseCategory) = db.expenseCategoryDao().delete(category)
 
+    // ---- Customers ----
+    fun observeCustomers(): Flow<List<Customer>> = db.customerDao().observeAll()
+    suspend fun allCustomers() = db.customerDao().getAll()
+    suspend fun getCustomer(id: Long) = db.customerDao().getById(id)
+    suspend fun saveCustomer(customer: Customer): Long =
+        if (customer.id == 0L) db.customerDao().insert(customer) else {
+            db.customerDao().update(customer); customer.id
+        }
+    suspend fun deleteCustomer(customer: Customer) = db.customerDao().delete(customer)
+    suspend fun salesForCustomer(customerId: Long) =
+        db.saleDao().getAll().filter { it.customerId == customerId }
+
+    // ---- Held orders (park / resume a cart mid-sale) ----
+    fun observeHeldOrders(): Flow<List<HeldOrder>> = db.heldOrderDao().observeAll()
+    suspend fun holdOrder(order: HeldOrder): Long = db.heldOrderDao().insert(order)
+    suspend fun deleteHeldOrder(order: HeldOrder) = db.heldOrderDao().delete(order)
+
+    // ---- Refunds / returns ----
+    data class RefundLine(val saleItem: SaleItem, val quantity: Double)
+
+    suspend fun refundItemsForSaleItem(saleItemId: Long) = db.refundItemDao().getForSaleItem(saleItemId)
+
+    /**
+     * Refunds some or all of a past sale's line items. Restocks any
+     * tracked product by the refunded quantity, records a StockMovement
+     * for the audit trail, and bumps [Sale.refundedAmount] so reports and
+     * the receipt screen reflect it — the original sale is never edited
+     * or deleted.
+     */
+    suspend fun refundSale(sale: Sale, lines: List<RefundLine>, note: String?): Long {
+        val amount = lines.sumOf { it.quantity * it.saleItem.unitPrice }
+        val refund = Refund(saleId = sale.id, amount = amount, note = note, createdAt = System.currentTimeMillis())
+        val refundId = db.refundDao().insert(refund)
+
+        for (line in lines) {
+            val item = line.saleItem
+            db.refundItemDao().insert(
+                RefundItem(
+                    refundId = refundId,
+                    saleItemId = item.id,
+                    productId = item.productId,
+                    productName = item.productName,
+                    quantity = line.quantity,
+                    amount = line.quantity * item.unitPrice
+                )
+            )
+            val productId = item.productId
+            if (productId != null) {
+                val product = db.productDao().getById(productId)
+                if (product != null && product.trackStock) {
+                    db.productDao().adjustStock(productId, line.quantity)
+                    db.stockMovementDao().insert(
+                        StockMovement(
+                            productId = productId,
+                            productName = product.name,
+                            changeQty = line.quantity,
+                            reason = "Return",
+                            note = "Refund of ${sale.invoiceNo}",
+                            createdAt = refund.createdAt
+                        )
+                    )
+                }
+            }
+        }
+
+        db.saleDao().update(sale.copy(refundedAmount = sale.refundedAmount + amount))
+        return refundId
+    }
+
+    // ---- Staff (local PIN accounts only — never an internet login) ----
+    fun observeStaff(): Flow<List<StaffUser>> = db.staffUserDao().observeAll()
+    suspend fun allStaff() = db.staffUserDao().getAll()
+    suspend fun staffByPin(pin: String) = db.staffUserDao().getByPin(pin)
+    suspend fun saveStaff(staff: StaffUser): Long =
+        if (staff.id == 0L) db.staffUserDao().insert(staff) else {
+            db.staffUserDao().update(staff); staff.id
+        }
+    suspend fun deleteStaff(staff: StaffUser) = db.staffUserDao().delete(staff)
+
     // ---- Backup / restore (raw access for BackupManager) ----
     suspend fun wipeAndRestore(
         categories: List<Category>,
@@ -179,7 +264,12 @@ class PosRepository(private val db: AppDatabase) {
         saleItems: List<SaleItem>,
         expenses: List<Expense>,
         expenseCategories: List<ExpenseCategory>,
-        stockMovements: List<StockMovement>
+        stockMovements: List<StockMovement>,
+        customers: List<Customer> = emptyList(),
+        heldOrders: List<HeldOrder> = emptyList(),
+        refunds: List<Refund> = emptyList(),
+        refundItems: List<RefundItem> = emptyList(),
+        staff: List<StaffUser> = emptyList()
     ) = withContext(Dispatchers.IO) {
         // clearAllTables() is a blocking call, so this whole restore runs
         // off the main thread.
@@ -193,6 +283,11 @@ class PosRepository(private val db: AppDatabase) {
         db.expenseDao().insertAll(expenses)
         db.expenseCategoryDao().insertAll(expenseCategories)
         db.stockMovementDao().insertAll(stockMovements)
+        db.customerDao().insertAll(customers)
+        db.heldOrderDao().insertAll(heldOrders)
+        db.refundDao().insertAll(refunds)
+        db.refundItemDao().insertAll(refundItems)
+        db.staffUserDao().insertAll(staff)
         Unit
     }
 

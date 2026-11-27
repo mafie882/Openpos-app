@@ -12,8 +12,8 @@ android {
         applicationId = "com.openpos.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -81,6 +81,14 @@ dependencies {
 
     // JSON for local backup/restore export files
     implementation("com.google.code.gson:gson:2.11.0")
+
+    // Barcode scanning via the camera — a self-contained scanner Activity,
+    // no Google Play Services / ML Kit account or network call involved.
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    // Photo picker for product photos (no custom permission needed on
+    // Android 13+; falls back to the legacy picker on older versions).
+    implementation("androidx.activity:activity-ktx:1.9.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

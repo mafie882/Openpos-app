@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
         No INTERNET permission: this app is fully offline. No account,
         no login, no server, no payment check — all data lives in a
-        local database on this device.
+        local database on this device. The permissions below are all
+        on-device hardware access (camera to scan a barcode, Bluetooth
+        to talk to a receipt printer you already paired yourself) —
+        none of them let the app reach the internet.
     -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- Classic Bluetooth SPP to a paired thermal receipt printer -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="31" />
 
     <application
         android:allowBackup="true"
